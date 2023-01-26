@@ -1,5 +1,6 @@
 #  coding: utf-8 
 import socketserver
+from pathlib import Path
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
@@ -31,8 +32,37 @@ class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
+        x = self.data.decode('ascii')
         print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        #self.request.sendall(bytearray("HTTP/1.1 200 OK\n\n" + open("./www/index.html", 'r').read(),'utf-8'))
+        
+        # Return a status code of “405 Method Not Allowed” for any method you cannot handle (POST/PUT/DELETE)
+        if x.split(' ')[0] != 'GET':
+           self.request.sendall('HTTP/1.1 405 Method Not Allowed\n\n'.encode('utf-8'))
+           return
+
+        auth_path = x.split(' ')[1]
+        req_path = Path('www/' + auth_path)
+
+        # The webserver can server 404 errors for paths not found
+        if req_path.is_file():
+            self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + req_path.read_text(), 'utf-8'))
+
+        elif req_path.is_dir(): 
+
+           
+            if (req_path/'index.html').is_file():
+                self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + (req_path/'index.html').read_text() , 'utf-8'))
+            else:
+                self.request.sendall('HTTP/1.1 404 File Not Found\n\n'.encode('utf-8'))       
+        else:
+            self.request.sendall('HTTP/1.1 404 File Not Found\n\n'.encode('utf-8'))       
+
+        # req_path.suffix
+         
+
+
+
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
