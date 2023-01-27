@@ -32,36 +32,61 @@ class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        x = self.data.decode('ascii')
+        deco_data = self.data.decode('ascii')
         print ("Got a request of: %s\n" % self.data)
         #self.request.sendall(bytearray("HTTP/1.1 200 OK\n\n" + open("./www/index.html", 'r').read(),'utf-8'))
         
-        # Return a status code of “405 Method Not Allowed” for any method you cannot handle (POST/PUT/DELETE)
-        if x.split(' ')[0] != 'GET':
-           self.request.sendall('HTTP/1.1 405 Method Not Allowed\n\n'.encode('utf-8'))
-           return
+        x = deco_data.split(' ')
+        method, path = x[0], x[1] 
 
-        auth_path = x.split(' ')[1]
-        req_path = Path('www/' + auth_path)
+        try:
 
-        # The webserver can server 404 errors for paths not found
-        if req_path.is_file():
-            self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + req_path.read_text(), 'utf-8'))
+            if method != 'GET':
+            self.handle_code_405()
+            return
 
-        elif req_path.is_dir(): 
+            req_path = Path('www/' + path)
 
-           
-            if (req_path/'index.html').is_file():
-                self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + (req_path/'index.html').read_text() , 'utf-8'))
+            if path.endswith('/'):
+                pass
+            elif path.endswith('.css'):
+                self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: test/css\n\n', req_path.read_text(), 'utf-8'))
+            elif path.endswith('.html'):
+                self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: test/html\n\n', req_path.read_text(), 'utf-8'))
             else:
-                self.request.sendall('HTTP/1.1 404 File Not Found\n\n'.encode('utf-8'))       
-        else:
-            self.request.sendall('HTTP/1.1 404 File Not Found\n\n'.encode('utf-8'))       
+                self.handle_code_301(path)
+        
+
+        except FileError:
+
+            if req_path.is_file():
+                self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + req_path.read_text(), 'utf-8'))
+            else:
+                self.handle_code_404()
+
+
+        except DirError:
+
+            if req_path.is_dir():            
+                if (req_path/'index.html').is_file():
+                    self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + (req_path/'index.html').read_text(), 'utf-8'))
+                else:
+                    self.handle_code_404()      
+               
 
         # req_path.suffix
+    def handle_code_301(self, path):
+        self.request.sendall(bytearray('HTTP/1.1 301 Moved Permenantly\n Location: ', path, '/'.encode('utf-8')))
          
+    def handle_code_400(self):
+        self.request.sendall('HTTP/1.1 400 Bad Request\n\n'.encode('utf-8'))
 
+    def handle_code_404(self):
+        self.request.sendall('HTTP/1.1 404 File Not Found\n\n'.encode('utf-8'))
 
+    def handle_code_405(self):
+        self.request.sendall('HTTP/1.1 405 Method Not Allowed\n\n'.encode('utf-8'))
+    
 
 
 if __name__ == "__main__":
