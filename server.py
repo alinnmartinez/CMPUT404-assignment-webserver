@@ -39,47 +39,62 @@ class MyWebServer(socketserver.BaseRequestHandler):
         x = deco_data.split(' ')
         method, path = x[0], x[1] 
 
-        try:
-            
-            if method != 'GET':
-                self.handle_code_405()
-                return
+        
+        if method != 'GET':
+            self.handle_code_405()
+            return
 
-            req_path = Path('www' + path)
+        req_path = Path('www' + path)
+        # print('The path: ' + str(req_path.resolve()))
+        if 'www' not in str(req_path.resolve()):
+            self.handle_code_404()
+            return
 
-            if path.endswith('/'):
-                self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + (req_path/'index.html').read_text(), 'utf-8'))
-                return
-            elif path.is_file() or path.is_dir():
-                path = Path(path + '/') 
-                self.handle_code_301(path)
-            
-            if path.endswith('.css'):
-                self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: text/css\n\n' + req_path.read_text(), 'utf-8'))
+        else: 
 
-            if path.endswith('.html'):
-                self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: text/html\n\n' + req_path.read_text(), 'utf-8'))
+            try:
+                if path.endswith('/'):
+                    self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: text/html\n\n' + (req_path/'index.html').read_text(), 'utf-8'))
+                    return
                 
-            else: 
-                self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + req_path.read_text(), 'utf-8'))
-                # self.handle_code_404()
+                elif path.endswith('.css'):
+                    self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: text/css\n\n' + req_path.read_text(), 'utf-8'))
+                    return
+
+                elif path.endswith('.html'):
+                    self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: text/html\n\n' + req_path.read_text(), 'utf-8'))
+                    return
+
+                elif req_path.is_file():
+                    self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + req_path.read_text(), 'utf-8'))
+                    return
+
+                else: 
+                    path2 = Path('www' + path + '/')
+
+                    if path2.is_dir():
+                        self.handle_code_301(path)
+                        return
+                
+                self.handle_code_404()
+                return
+            
+            except:
+                self.handle_code_404()
+                return
         
 
-        except FileNotFoundError:
-
-            if req_path.is_file():
-                self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + req_path.read_text(), 'utf-8'))
-            else:
-                self.handle_code_404()
+        # if req_path.is_file():
+        #     self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + req_path.read_text(), 'utf-8'))
+        # else:
+        #     self.handle_code_404()
 
 
-        except IsADirectoryError:
-
-            if req_path.is_dir():            
-                if (req_path/'index.html').is_file():
-                    self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + (req_path/'index.html').read_text(), 'utf-8'))
-                else:
-                    self.handle_code_404()      
+        # if req_path.is_dir():            
+        #     if (req_path/'index.html').is_file():
+        #         self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + (req_path/'index.html').read_text(), 'utf-8'))
+        #     else:
+        #         self.handle_code_404()      
                
     # req_path.suffix
 
