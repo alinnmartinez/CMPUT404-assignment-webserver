@@ -38,7 +38,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         
         x = deco_data.split(' ')
         method, path = x[0], x[1] 
-        #test
+
         try:
             
             if method != 'GET':
@@ -49,12 +49,20 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
             if path.endswith('/'):
                 self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + (req_path/'index.html').read_text(), 'utf-8'))
-            elif path.endswith('.css'):
-                self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: test/css\n\n', req_path.read_text(), 'utf-8'))
-            elif path.endswith('.html'):
-                self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: test/html\n\n', req_path.read_text(), 'utf-8'))
-            else:
+                return
+            elif path.is_file() or path.is_dir():
+                path = Path(path + '/') 
                 self.handle_code_301(path)
+            
+            if path.endswith('.css'):
+                self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: text/css\n\n' + req_path.read_text(), 'utf-8'))
+
+            if path.endswith('.html'):
+                self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: text/html\n\n' + req_path.read_text(), 'utf-8'))
+                
+            else: 
+                self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + req_path.read_text(), 'utf-8'))
+                # self.handle_code_404()
         
 
         except FileNotFoundError:
@@ -76,7 +84,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
     # req_path.suffix
 
     def handle_code_301(self, path):
-        self.request.sendall(bytearray('HTTP/1.1 301 Moved Permenantly\n Location: ', path, '/'.encode('utf-8')))
+        self.request.sendall(bytearray('HTTP/1.1 301 Moved Permenantly\n Location: ' + path + '/', 'utf-8'))
          
     def handle_code_400(self):
         self.request.sendall('HTTP/1.1 400 Bad Request\n\n'.encode('utf-8'))
