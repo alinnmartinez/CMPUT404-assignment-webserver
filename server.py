@@ -45,7 +45,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
                 self.handle_code_405()
                 return
 
-            req_path = Path('www/' + path)
+            req_path = Path('www' + path)
 
             if path.endswith('/'):
                 self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + (req_path/'index.html').read_text(), 'utf-8'))
@@ -57,7 +57,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
                 self.handle_code_301(path)
         
 
-        except FileError:
+        except FileNotFoundError:
 
             if req_path.is_file():
                 self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + req_path.read_text(), 'utf-8'))
@@ -65,7 +65,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
                 self.handle_code_404()
 
 
-        except DirError:
+        except IsADirectoryError:
 
             if req_path.is_dir():            
                 if (req_path/'index.html').is_file():
