@@ -38,7 +38,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         
         x = deco_data.split(' ')
         method, path = x[0], x[1] 
-
+        #test
         try:
             
             if method != 'GET':
