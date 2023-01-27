@@ -42,8 +42,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
         try:
 
             if method != 'GET':
-            self.handle_code_405()
-            return
+                self.handle_code_405()
+                return
 
             req_path = Path('www/' + path)
 
