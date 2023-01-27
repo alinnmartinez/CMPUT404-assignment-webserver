@@ -40,7 +40,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         method, path = x[0], x[1] 
 
         try:
-
+            
             if method != 'GET':
                 self.handle_code_405()
                 return
@@ -48,7 +48,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
             req_path = Path('www/' + path)
 
             if path.endswith('/'):
-                pass
+                self.request.sendall(bytearray('HTTP/1.1 200 OK\n\n' + (req_path/'index.html').read_text(), 'utf-8'))
             elif path.endswith('.css'):
                 self.request.sendall(bytearray('HTTP/1.1 200 OK\n' + 'Content-Type: test/css\n\n', req_path.read_text(), 'utf-8'))
             elif path.endswith('.html'):
@@ -73,8 +73,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
                 else:
                     self.handle_code_404()      
                
+    # req_path.suffix
 
-        # req_path.suffix
     def handle_code_301(self, path):
         self.request.sendall(bytearray('HTTP/1.1 301 Moved Permenantly\n Location: ', path, '/'.encode('utf-8')))
          
